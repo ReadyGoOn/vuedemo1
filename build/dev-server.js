@@ -5,12 +5,16 @@ if (!process.env.NODE_ENV) {
   process.env.NODE_ENV = JSON.parse(config.dev.env.NODE_ENV)
 }
 
+var expressapi = require('../src/express/api')
+var expressapp = require('../src/express/app')
 var opn = require('opn')
 var path = require('path')
 var express = require('express')
 var webpack = require('webpack')
 var proxyMiddleware = require('http-proxy-middleware')
 var webpackConfig = require('./webpack.dev.conf')
+var cookieParser = require('cookie-parser')
+var session = require('express-session')
 
 // default port where dev server listens for incoming traffic
 var port = process.env.PORT || config.dev.port
@@ -39,6 +43,16 @@ compiler.plugin('compilation', function (compilation) {
   })
 })
 
+app.use(cookieParser());
+app.use(session({
+    secret: 'vue',
+    name: 'connect.sid',
+    cookie: {maxAge:3600000},
+    resave: false,
+    saveUninitialized: true
+}))
+app.use('/api', expressapi)
+app.use('/app', expressapp)
 // proxy api requests
 Object.keys(proxyTable).forEach(function (context) {
   var options = proxyTable[context]
@@ -46,6 +60,7 @@ Object.keys(proxyTable).forEach(function (context) {
     options = { target: options }
   }
   app.use(proxyMiddleware(options.filter || context, options))
+  //  app.use(proxyMiddleware( context, options))
 })
 
 // handle fallback for HTML5 history API
@@ -74,7 +89,7 @@ devMiddleware.waitUntilValid(() => {
   console.log('> Listening at ' + uri + '\n')
   // when env is testing, don't need open it
   if (autoOpenBrowser && process.env.NODE_ENV !== 'testing') {
-    opn(uri)
+    // opn(uri)
   }
   _resolve()
 })
